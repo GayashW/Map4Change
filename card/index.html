@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Community Upgrade Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+  <!-- Your custom CSS -->
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    #map {
+      height: 100%;
+      width: 100%;
+    }
+    #form-container {
+      margin: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Map Container -->
+  <div id="map"></div>
+
+  <hr />
+
+  <div id="search-sort-container" style="margin-top: 20px;">
+    <h3>🔍 Search & Sort Nearby Entries</h3>
+
+    <label for="searchRadius">Search radius (km):</label>
+    <input type="number" id="searchRadius" value="5" min="1" max="50" step="1" />
+
+    <label for="sortCriteria">Sort by:</label>
+    <select id="sortCriteria">
+      <option value="distance">Distance</option>
+      <option value="campaignDate">Campaign Date</option>
+      <option value="votes">Upvotes</option>
+      <option value="joins">Joins</option>
+    </select>
+
+    <label for="sortDirection">Direction:</label>
+    <select id="sortDirection">
+      <option value="asc">Ascending</option>
+      <option value="desc" selected>Descending</option>
+    </select>
+
+    <button id="searchSortBtn">Search & Sort</button>
+
+    <div id="resultsList" style="margin-top: 15px; max-height: 250px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;">
+      <!-- Results will appear here -->
+    </div>
+ 
+    <h3 style="margin-top: 20px;">Nearby Problems by Category</h3>
+    <canvas id="categoryChart" width="400" height="200"></canvas>
+
+ </div>
+
+
+  <!-- Form Container -->
+  <div id="form-container">
+    <h2>📢 Report an Upgrade or Fix</h2>
+    <form id="entryForm">
+      <label for="title">Title:</label>
+      <input type="text" id="title" required />
+
+      <label for="category">Category:</label>
+      <select id="category" required>
+        <option value="">-- Select Category --</option>
+        <option value="Garbage">Garbage</option>
+        <option value="Drainage">Drainage</option>
+        <option value="Lighting">Lighting</option>
+        <option value="Road">Road</option>
+        <option value="Other">Other</option>
+      </select>
+
+      <input
+        type="text"
+        id="customCategoryInput"
+        placeholder="Enter custom category"
+        style="display: none;"
+      />
+
+      <label for="status">Status:</label>
+      <select id="status" required>
+        <!-- Populated dynamically via JS -->
+      </select>
+
+      <input
+        type="text"
+        id="customStatusInput"
+        placeholder="Enter custom status"
+        style="display: none;"
+      />
+
+      <label for="description">Description:</label>
+      <textarea id="description" rows="3"></textarea>
+
+      <button type="button" id="selectLocationBtn">Select from Map</button>
+      <button type="submit">Submit</button>
+    </form>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js" defer></script>
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
+  <!-- Chart JS -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+  <!-- Main JS -->
+  <script src="main.js" defer></script>
+  
+</body>
+</html>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1069.18 974.93">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+        stroke: #000;
+        stroke-miterlimit: 10;
+        stroke-width: 100px;
+      }
+
+      .cls-2 {
+        font-family: BritannicBold, 'Britannic Bold';
+        font-size: 600px;
+      }
+    </style>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <path class="cls-1" d="M418.42,117.07L68.17,723.71c-51.63,89.43,12.91,201.22,116.17,201.22h700.49c103.27,0,167.81-111.79,116.17-201.22L650.76,117.07c-51.63-89.43-180.72-89.43-232.35,0Z"/>
+    <text class="cls-2" transform="translate(426.05 721.28)"><tspan x="0" y="0">!</tspan></text>
+  </g>
+</svg>

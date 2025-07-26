@@ -1,0 +1,198 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+#map {
+  height: 100vh;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+
+.blend-overlay {
+  mix-blend-mode: multiply;
+  pointer-events: none; /* So overlay doesn’t block map interactions */
+  z-index: 400;
+  opacity: 0.8;
+}
+
+
+#form-container {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  width: 300px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  z-index: 999;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+input, select, textarea, button {
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+button {
+  cursor: pointer;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+#customCategoryInput,
+#customStatusInput {
+  margin-top: 5px;
+  display: none;
+}
+
+/* Responsive Design */
+/* Main custom popup container */
+/* Map Popup Styles */
+.custom-popup {
+  font-family: Arial, sans-serif;
+  max-width: 300px;
+  padding: 2px;
+}
+
+.custom-popup strong {
+  font-size: 1.1em;
+  color: #333;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.custom-popup p {
+  margin: 8px 0;
+  color: #555;
+  line-height: 1.4;
+}
+
+.custom-popup button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  margin-right: 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.3s;
+}
+
+.custom-popup button:hover {
+  background-color: #45a049;
+}
+
+.custom-popup button.voted {
+  background-color: #f44336;
+}
+
+.custom-popup button.voted:hover {
+  background-color: #d32f2f;
+}
+
+.custom-popup button.joined {
+  background-color: #2196F3;
+}
+
+.custom-popup button.joined:hover {
+  background-color: #0b7dda;
+}
+
+.custom-popup .campaign-section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+  font-size: 0.9em;
+}
+
+.custom-popup .campaign-section div {
+  margin-bottom: 5px;
+}
+
+/* Campaign Form Styles */
+.campaign-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px;
+}
+
+.campaign-form label {
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+.campaign-form input[type="datetime-local"] {
+  padding: 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.campaign-form .form-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.campaign-form .cancel-btn {
+  background-color: #f44336;
+}
+
+.campaign-form .cancel-btn:hover {
+  background-color: #d32f2f;
+}
+
+.countdown-wrapper {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.countdown {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+
+#search-sort-container {
+  position: absolute;
+  left: 10px;
+  top: 10px; /* or wherever you want it below the form */
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  width: 300px;
+  height: auto;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  z-index: 999; /* same as form-container */
+  overflow-y: auto;
+
+}
+
+#categoryChart {
+  width: 100% !important;  /* full width of the container */
+  height: 200px !important; /* fixed height */
+  background-color: #fff;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  display: block;
+  margin-top: 10px;
+  z-index: auto;  /* no need for high z-index inside container */
+}
