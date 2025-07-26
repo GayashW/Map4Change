@@ -16,7 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
   zoomToUserLocation();
   setupForm();
 
-  loadEntries().then(async (entries) => {
+  // Destructure entries directly from loadEntries
+  loadEntries().then(async ({ entries }) => {
     // Wrapper async function to handle the geolocation logic
     async function handlePosition(position) {
       const { latitude, longitude } = position.coords;
@@ -55,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   });
 });
+
 
 
 
@@ -1323,11 +1325,11 @@ document.getElementById('searchSortBtn').addEventListener('click', async () => {
     userLatGlobal = position.coords.latitude;
     userLngGlobal = position.coords.longitude;
 
-    const radiusKm = Number(document.getElementById('searchRadius').value) || 5;
+    const radiusMeters = Number(document.getElementById('searchRadius').value) || 1000;
     const criteria = document.getElementById('sortCriteria').value || 'distance';
     const direction = document.getElementById('sortDirection').value || 'asc';
 
-    const analysis = await analyzeNearbyEntries(userLatGlobal, userLngGlobal, radiusKm);
+    const analysis = await analyzeNearbyEntries(userLatGlobal, userLngGlobal, radiusMeters / 1000);
 
     if (!analysis.nearbyEntries.length) {
       document.getElementById('resultsList').innerHTML = '<p>No nearby entries found.</p>';
@@ -1341,7 +1343,7 @@ document.getElementById('searchSortBtn').addEventListener('click', async () => {
 
     // Add circle with radius (in meters)
     searchRadiusCircle = L.circle([userLatGlobal, userLngGlobal], {
-      radius: radiusKm * 1000,  // convert km to meters
+      radius: radiusMeters,  // convert km to meters
       color: '#405c78',
       fillColor: '#aaddff98',
       fillOpacity: 0.3,
