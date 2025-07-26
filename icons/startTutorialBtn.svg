@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 1060">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+        stroke: #fff;
+        stroke-miterlimit: 10;
+        stroke-width: 100px;
+      }
+
+      .cls-2, .cls-3 {
+        isolation: isolate;
+      }
+
+      .cls-3 {
+        fill: #fff;
+        font-family: BritannicBold, 'Britannic Bold';
+        font-size: 700px;
+      }
+    </style>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <circle class="cls-1" cx="530" cy="530" r="480"/>
+    <g class="cls-2">
+      <text class="cls-3" transform="translate(403.36 734.22)"><tspan x="0" y="0">!</tspan></text>
+    </g>
+  </g>
+</svg>

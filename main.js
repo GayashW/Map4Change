@@ -15,23 +15,44 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeMap();
   zoomToUserLocation();
   setupForm();
-  loadEntries().then(() => {
-    
 
-    // After zooming and entries loaded, do nearby analysis
-    navigator.geolocation.getCurrentPosition(async position => {
+  loadEntries().then(async (entries) => {
+    // Wrapper async function to handle the geolocation logic
+    async function handlePosition(position) {
       const { latitude, longitude } = position.coords;
 
+      // Analyze nearby entries
       const analysis = await analyzeNearbyEntries(latitude, longitude);
-      
       console.log("Nearby Category Counts:", analysis.countsByCategory);
       console.log("Nearest Campaign:", analysis.nearestCampaign);
       console.log("Top Voted Entry Nearby:", analysis.topVoted);
 
-      // Optionally display in UI here
-    }, error => {
-      console.error("Geolocation error:", error);
-    });
+      let tutorialEntryId = null;
+      if (analysis.nearestCampaign) {
+        tutorialEntryId = analysis.nearestCampaign.id;
+      } else if (analysis.topVoted) {
+        tutorialEntryId = analysis.topVoted.id;
+      }
+
+      for (const entry of entries) {
+        const isTutorial = entry.id === tutorialEntryId;
+        await addMarkerToMap(entry, isTutorial);
+      }
+
+      // Optionally start the tutorial here
+      // introJs().start();
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        handlePosition(position).catch(console.error);
+      },
+      error => {
+        console.error("Geolocation error:", error);
+        // If geolocation fails, just add markers without tutorial highlight
+        entries.forEach(entry => addMarkerToMap(entry, false));
+      }
+    );
   });
 });
 
@@ -288,22 +309,43 @@ async function loadEntries() {
   }
 }
 
-async function addMarkerToMap(entry) {
-  // 👇 Define isCampaignEnded first
+async function addMarkerToMap(entry, isTutorial = false) {
   const now = new Date();
   const campaignDate = entry.campaign ? new Date(entry.campaign) : null;
   const isCampaignEnded = campaignDate ? campaignDate < now : false;
 
   const iconPath = getMarkerIcon(entry.category, entry.status, isCampaignEnded);
 
-  const customIcon = L.icon({
-    iconUrl: iconPath,
-    iconSize: [48, 48],
-    iconAnchor: [24, 48],
-    popupAnchor: [0, -48]
-  });
+  let marker;
+  if (isTutorial) {
+    // Use divIcon so we can embed data-intro for tutorial
+    const iconWithHint = L.divIcon({
+      className: 'custom-marker-icon',
+      html: `
+        <div 
+          class="marker-hint" 
+          data-intro="This is a reported issue near you. Click for details." 
+          data-step="4"
+        >
+          <img src="${iconPath}" width="48" height="48" />
+        </div>
+      `,
+      iconSize: [48, 48],
+      iconAnchor: [24, 48],
+      popupAnchor: [0, -48]
+    });
 
-  const marker = L.marker([entry.lat, entry.lng], { icon: customIcon }).addTo(map);
+    marker = L.marker([entry.lat, entry.lng], { icon: iconWithHint }).addTo(map);
+  } else {
+    const customIcon = L.icon({
+      iconUrl: iconPath,
+      iconSize: [48, 48],
+      iconAnchor: [24, 48],
+      popupAnchor: [0, -48]
+    });
+
+    marker = L.marker([entry.lat, entry.lng], { icon: customIcon }).addTo(map);
+  }
 
   allMarkers.push({ marker, category: entry.category });
 
@@ -331,7 +373,7 @@ async function addMarkerToMap(entry) {
   marker.on('popupopen', () => {
     setupPopupInteractions(entry, marker);
     if (entry.campaign) startCountdown(entry, marker);
-     lucide.createIcons();
+    lucide.createIcons();
   });
 }
 
@@ -1269,6 +1311,8 @@ function renderNearbyEntriesList(entries) {
 
 
 
+let searchRadiusCircle;  // global variable to keep track of existing circle
+
 document.getElementById('searchSortBtn').addEventListener('click', async () => {
   if (!navigator.geolocation) {
     alert('Geolocation not supported.');
@@ -1290,6 +1334,23 @@ document.getElementById('searchSortBtn').addEventListener('click', async () => {
       return;
     }
 
+    // Remove existing circle if present
+    if (searchRadiusCircle) {
+      map.removeLayer(searchRadiusCircle);
+    }
+
+    // Add circle with radius (in meters)
+    searchRadiusCircle = L.circle([userLatGlobal, userLngGlobal], {
+      radius: radiusKm * 1000,  // convert km to meters
+      color: '#405c78',
+      fillColor: '#aaddff98',
+      fillOpacity: 0.3,
+      weight: 2,
+    }).addTo(map);
+
+    // Optionally zoom map to fit the circle
+    map.fitBounds(searchRadiusCircle.getBounds());
+
     // Sort and render entries
     const sorted = sortEntries(analysis.nearbyEntries, criteria, direction);
     renderNearbyEntriesList(sorted);
@@ -1301,11 +1362,11 @@ document.getElementById('searchSortBtn').addEventListener('click', async () => {
     // Render the category chart with aggregated data
     renderCategoryChart(categoryCounts, analysis.nearbyEntries.length > 0);
 
-
   }, () => {
     alert('Allow location access.');
   });
 });
+
 
 
 // C H A R T
@@ -1549,3 +1610,47 @@ function updateMarkerVisibility() {
 }
 
 
+document.getElementById('startTutorialBtn').addEventListener('click', () => {
+  introJs().start();
+});
+
+// Run tutorial automatically only if not shown before
+if (!localStorage.getItem('tutorialShown')) {
+  introJs()
+    .onbeforechange(() => {
+      document.body.classList.add('tutorial-active');
+    })
+    .onexit(() => {
+      document.body.classList.remove('tutorial-active');
+      // Mark tutorial as shown when user exits
+      localStorage.setItem('tutorialShown', 'true');
+    })
+    .start();
+}
+
+
+ function startPopupTutorialWithNearbyEntry(entries, markers, map) {
+  if (localStorage.getItem('popupTutorialShown')) return;
+
+  if (!Array.isArray(entries) || entries.length === 0) return;
+
+  localStorage.setItem('popupTutorialShown', 'true');
+
+  const firstEntry = entries[0];
+  const marker = markers[firstEntry.id];
+
+  if (!marker) return;
+
+  map.setView([firstEntry.lat, firstEntry.lng], 16);
+  marker.openPopup();
+
+  setTimeout(() => {
+    const popupContent = document.querySelector('.leaflet-popup-content');
+    if (popupContent) {
+      popupContent.setAttribute('data-intro', 'This is a detailed report. It shows information about a nearby issue.');
+      popupContent.setAttribute('data-step', '2');
+
+      introJs().start();
+    }
+  }, 500); // wait a bit for popup to render
+}
