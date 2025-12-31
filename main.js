@@ -1,7 +1,7 @@
 // Import Supabase client
 const SUPABASE_URL = 'https://whqjayeqevtukdatjmpp.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndocWpheWVxZXZ0dWtkYXRqbXBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI3NzI4ODIsImV4cCI6MjA2ODM0ODg4Mn0.r09UH3XC2sQpNWOujFH1NvvaSuyboPqzhFsneGyKmjQ';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Initialize map
 let map = L.map('map').setView([7.5731, 80.3718], 8);
