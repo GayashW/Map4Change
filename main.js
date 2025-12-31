@@ -269,7 +269,7 @@ async function handleFormSubmit(e) {
     created_at: new Date().toISOString()
   };
 
-  const { error } = await supabase.from('entries').insert([newEntry]);
+  const { error } = await supabaseClient.from('entries').insert([newEntry]);
   if (error) {
     console.error("Error saving entry:", error);
     alert("Failed to save entry. Please try again.");
@@ -300,7 +300,7 @@ async function loadEntries() {
     }
   });
 
-  const { data: entries, error } = await supabase.from('entries').select('*');
+  const { data: entries, error } = await supabaseClient.from('entries').select('*');
   if (error) {
     console.error('Error loading entries:', error);
     return;
@@ -352,9 +352,9 @@ async function addMarkerToMap(entry, isTutorial = false) {
   allMarkers.push({ marker, category: entry.category });
 
   const userId = getUserId();
-  const { data: votes } = await supabase.from('votes').select('user_id').eq('entry_id', entry.id);
-  const { data: joins } = await supabase.from('joins').select('user_id').eq('entry_id', entry.id);
-  const { data: downvotes } = await supabase.from('downvotes').select('user_id').eq('entry_id', entry.id);
+  const { data: votes } = await supabaseClient.from('votes').select('user_id').eq('entry_id', entry.id);
+  const { data: joins } = await supabaseClient.from('joins').select('user_id').eq('entry_id', entry.id);
+  const { data: downvotes } = await supabaseClient.from('downvotes').select('user_id').eq('entry_id', entry.id);
 
   const hasVoted = votes?.some(v => v.user_id === userId) || false;
   const hasJoined = joins?.some(j => j.user_id === userId) || false;
@@ -596,36 +596,44 @@ async function checkIfUserDownvoted(entryId) {
 
 // This function is called to refresh or initially show the popup
 async function refreshMarkerPopup(entry, marker) {
-  // Fetch latest state for this entry and user
-  const voteCount = await getVoteCount(entry.id);
-  const downvoteCount = await getDownvoteCount(entry.id);
-  const joinCount = await getJoinCount(entry.id);
+  // FIX: Using 'supabaseClient' instead of 'supabase'
+  const { data: freshEntry } = await supabaseClient
+    .from('entries')
+    .select('*')
+    .eq('id', entry.id)
+    .single();
+    
+  if (!freshEntry) return;
 
-  const hasVoted = await checkIfUserVoted(entry.id);
-  const hasDownvoted = await checkIfUserDownvoted(entry.id);
-  const hasJoined = await checkIfUserJoined(entry.id);
+  const userId = getUserId();
 
-  // Log when popup opens
-  console.log(`Popup opened for entry ${entry.id}: hasVoted=${hasVoted}, hasDownvoted=${hasDownvoted}`);
+  // FIX: Using 'supabaseClient' for all queries here
+  const [votesRes, joinsRes, downvotesRes] = await Promise.all([
+    supabaseClient.from('votes').select('user_id').eq('entry_id', entry.id),
+    supabaseClient.from('joins').select('user_id').eq('entry_id', entry.id),
+    supabaseClient.from('downvotes').select('user_id').eq('entry_id', entry.id)
+  ]);
 
-  // Generate the popup content HTML
+  const hasVoted = votesRes.data?.some(v => v.user_id === userId) || false;
+  const hasJoined = joinsRes.data?.some(j => j.user_id === userId) || false;
+  const hasDownvoted = downvotesRes.data?.some(d => d.user_id === userId) || false;
+
   const popupContent = generatePopupContent(
-    entry,
-    voteCount,
-    joinCount,
+    freshEntry,
+    votesRes.data?.length || 0,
+    joinsRes.data?.length || 0,
     hasVoted,
     hasJoined,
-    downvoteCount,
+    downvotesRes.data?.length || 0,
     hasDownvoted
   );
 
-  // Show popup
-  marker.bindPopup(popupContent).openPopup();
-  lucide.createIcons();
-
-  // Setup interactions
-  await setupPopupInteractions(entry, marker, hasVoted, hasDownvoted);
+  marker.setPopupContent(popupContent);
   
+  // Reattach listeners immediately
+  setTimeout(() => setupPopupInteractions(freshEntry, marker, hasVoted, hasDownvoted), 0);
+  
+  if (freshEntry.campaign) startCountdown(freshEntry, marker);
 }
 
 async function openPopupForEntry(entry, marker) {
@@ -780,40 +788,20 @@ async function checkIfUserDownvoted(entryId) {
 
 
 async function checkAndRemoveEntryIfNeeded(entry, marker) {
-  // Get counts from separate tables
-  const { data: votesData, error: votesError } = await supabase
-    .from('votes')
-    .select('id', { count: 'exact' })
-    .eq('entry_id', entry.id);
+  // FIX: Changed 'supabase' to 'supabaseClient'
+  const { data: v } = await supabaseClient.from('votes').select('id').eq('entry_id', entry.id);
+  const { data: d } = await supabaseClient.from('downvotes').select('id').eq('entry_id', entry.id);
+  
+  const up = v?.length || 0;
+  const down = d?.length || 0;
 
-  const { data: downvotesData, error: downvotesError } = await supabase
-    .from('downvotes')
-    .select('id', { count: 'exact' })
-    .eq('entry_id', entry.id);
-
-  if (votesError || downvotesError) {
-    console.error('Error fetching vote counts:', votesError || downvotesError);
-    return;
-  }
-
-  const upvotesCount = votesData.length;
-  const downvotesCount = downvotesData.length;
-
-  console.log(`Upvotes: ${upvotesCount}, Downvotes: ${downvotesCount}`);
-
-  if (downvotesCount - upvotesCount >= 20) {
-    // Delete entry
-    const { error: deleteError } = await supabase
-      .from('entries')
-      .delete()
-      .eq('id', entry.id);
-
-    if (deleteError) {
-      console.error('Error deleting entry:', deleteError);
-    } else {
-      alert('This entry has been removed due to excessive downvotes.');
-      marker.closePopup();
-      // Optionally remove marker from map or refresh UI here
+  if (down - up >= 20) {
+    // FIX: Changed 'supabase' to 'supabaseClient'
+    await supabaseClient.from('entries').delete().eq('id', entry.id);
+    alert('This entry has been removed due to excessive downvotes.');
+    
+    if (map && marker) {
+      map.removeLayer(marker);
     }
   }
 }
@@ -886,12 +874,12 @@ async function refreshMarkerPopup(entry, marker) {
 // Vote/Join management
 async function toggleVote(entryId) {
   const userId = getUserId();
-  const { data } = await supabase.from('votes').select('*').eq('entry_id', entryId).eq('user_id', userId);
+  const { data } = await supabaseClient.from('votes').select('*').eq('entry_id', entryId).eq('user_id', userId);
   
   if (data?.length) {
-    await supabase.from('votes').delete().eq('entry_id', entryId).eq('user_id', userId);
+    await supabaseClient.from('votes').delete().eq('entry_id', entryId).eq('user_id', userId);
   } else {
-    await supabase.from('votes').insert([{ entry_id: entryId, user_id: userId }]);
+    await supabaseClient.from('votes').insert([{ entry_id: entryId, user_id: userId }]);
   }
 }
 
@@ -899,8 +887,8 @@ async function toggleDownvote(entryId) {
   const userId = getUserId();
   console.log('toggleDownvote called for entryId:', entryId, 'userId:', userId);
 
-  // Check if user has already downvoted this entry
-  const { data, error } = await supabase
+  // FIX: Changed 'supabase' to 'supabaseClient'
+  const { data, error } = await supabaseClient
     .from('downvotes')
     .select('*')
     .eq('entry_id', entryId)
@@ -914,7 +902,8 @@ async function toggleDownvote(entryId) {
 
   if (data?.length) {
     // User already downvoted — remove downvote
-    const { error: delError } = await supabase
+    // FIX: Changed 'supabase' to 'supabaseClient'
+    const { error: delError } = await supabaseClient
       .from('downvotes')
       .delete()
       .eq('entry_id', entryId)
@@ -927,7 +916,8 @@ async function toggleDownvote(entryId) {
     }
   } else {
     // User has not downvoted yet — insert downvote
-    const { error: insertError } = await supabase
+    // FIX: Changed 'supabase' to 'supabaseClient'
+    const { error: insertError } = await supabaseClient
       .from('downvotes')
       .insert([{ entry_id: entryId, user_id: userId }]);
 
@@ -940,15 +930,14 @@ async function toggleDownvote(entryId) {
 }
 
 
-
 async function toggleJoin(entryId) {
   const userId = getUserId();
-  const { data } = await supabase.from('joins').select('*').eq('entry_id', entryId).eq('user_id', userId);
+  const { data } = await supabaseClient.from('joins').select('*').eq('entry_id', entryId).eq('user_id', userId);
   
   if (data?.length) {
-    await supabase.from('joins').delete().eq('entry_id', entryId).eq('user_id', userId);
+    await supabaseClient.from('joins').delete().eq('entry_id', entryId).eq('user_id', userId);
   } else {
-    await supabase.from('joins').insert([{ entry_id: entryId, user_id: userId }]);
+    await supabaseClient.from('joins').insert([{ entry_id: entryId, user_id: userId }]);
   }
 }
 
@@ -1156,7 +1145,7 @@ function getDistanceKm(lat1, lon1, lat2, lon2) {
 // A N A L Y T I C S
 
 async function analyzeNearbyEntries(userLat, userLng, searchRadius = 5) {
-  const { data: allEntries, error } = await supabase.from('entries').select('*');
+  const { data: allEntries, error } = await supabaseClient.from('entries').select('*');
   if (error || !allEntries) {
     console.error("Failed to fetch entries:", error);
     return { nearbyEntries: [] };
