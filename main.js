@@ -1145,7 +1145,9 @@ function getDistanceKm(lat1, lon1, lat2, lon2) {
 // A N A L Y T I C S
 
 async function analyzeNearbyEntries(userLat, userLng, searchRadius = 5) {
+  // 1. Use supabaseClient here (this part was already correct in your code)
   const { data: allEntries, error } = await supabaseClient.from('entries').select('*');
+  
   if (error || !allEntries) {
     console.error("Failed to fetch entries:", error);
     return { nearbyEntries: [] };
@@ -1163,9 +1165,10 @@ async function analyzeNearbyEntries(userLat, userLng, searchRadius = 5) {
   if (entryIds.length === 0) return { nearbyEntries };
 
   // Step 2: Fetch votes and joins
+  // 🔴 FIX: Changed 'supabase' to 'supabaseClient'
   const [{ data: votes }, { data: joins }] = await Promise.all([
-    supabase.from('votes').select('entry_id').in('entry_id', entryIds),
-    supabase.from('joins').select('entry_id').in('entry_id', entryIds)
+    supabaseClient.from('votes').select('entry_id').in('entry_id', entryIds),
+    supabaseClient.from('joins').select('entry_id').in('entry_id', entryIds)
   ]);
 
   // Step 3: Count votes and joins per entry
